@@ -1,7 +1,7 @@
 {
-  "name": "test",
+  "name": "yt-embed",
   "version": "1.0.0",
-  "description": "",
+  "description": "Don't like YouTube ads?",
   "main": "copy.js",
   "scripts": {
     "build": "webpack",

@@ -5,7 +5,7 @@ const createMiniPlayer = require('./create-mini-player');
 const createSettingsHTML = require('./create-settings-html');
 
 const SETTINGS = {
-	bookmarkName: { defaultValue: 'ytBookmark', inputType: 'text' },
+	bookmarkName: { defaultValue: 'ytEmbed', inputType: 'text' },
 	x: { inputType: 'number' },
 	y: { inputType: 'number' },
 	width: { inputType: 'number' },
@@ -15,7 +15,6 @@ const SETTINGS = {
 	showDebugMessages: { defaultValue: false, inputType: 'checkbox' },
 	autoFocusPlayer: { defaultValue: true, inputType: 'checkbox' }
 	// autoStart: TODO
-	// opacity: TODO
 };
 
 // TODO:
@@ -25,8 +24,8 @@ module.exports = class Script {
 		this.settings = new Settings();
 		this.settings.load();
 
-		window._ytBookmarklet = this;
-		this.debug('script instance set on window._ytBookmarklet.');
+		window._ytEmbed = this;
+		this.debug('script instance set on window._ytEmbed.');
 
 		Object.entries(SETTINGS).forEach(([key, props]) => {
 			if (!this.settings.has(key) && props.defaultValue !== undefined) {
@@ -285,7 +284,7 @@ module.exports = class Script {
 	}
 
 	destroy() {
-		window._ytBookmarklet = null;
+		window._ytEmbed = null;
 		window.removeEventListener('click', this._onWindowClick);
 		this.debug('destroyed.');
 

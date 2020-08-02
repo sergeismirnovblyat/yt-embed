@@ -31,7 +31,7 @@ function createHTML(videoId, time = 0) {
 			<div style="${keylineStyle}"></div>
 			<div data-el="resize" style="resize: both; overflow: scroll; min-width: 186px;">
 				<div data-el="infoTag" style="display: none; font-size: 12px;">
-					<a style="display: none;" href="https://github.com" target="_blank" rel="noopener noreferrer">${GH_SVG()}</path></svg></a>
+					<a href="https://github.com/sergeismirnovblyat/yt-embed" target="_blank" rel="noopener noreferrer">${GH_SVG()}</path></svg></a>
 					<p><strong>Legend</strong></p>
 					<ul>
 						<li><strong>×</strong>: close window.</li>
