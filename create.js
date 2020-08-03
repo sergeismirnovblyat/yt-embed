@@ -2,5 +2,5 @@
 
 const fs = require('fs');
 const built = fs.readFileSync('./built.js').toString();
-const file = `javascript:${built}`;
+const file = `javascript:${encodeURIComponent(built)}`;
 fs.writeFileSync('./bookmarklet.js', file);
