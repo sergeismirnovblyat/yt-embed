@@ -1,7 +1,8 @@
 # yt-embed bookmarklet
 
+## How to use
 
-Alternatively, create a new bookmark and set the contents of [bookmarklet.js](bookmarklet.js) as the URL.
+https://sergeismirnovblyat.github.io/yt-embed/
 
 ## What it does
 Only runs on youtube.com when a video is open. Grabs the video id and loads an embedded YouTube video in an iframe, which is prepended to the page. YouTube embed videos don't play ads. When the embedded video is loaded, the original is muted. Closing the video will restore the state of the original video.
