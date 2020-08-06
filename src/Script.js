@@ -1,5 +1,4 @@
 const Settings = require('./Settings');
-const Player = require('./Player');
 const Draggable = require('./Draggable');
 const createMiniPlayer = require('./create-mini-player');
 const createSettingsHTML = require('./create-settings-html');
@@ -11,7 +10,6 @@ const SETTINGS = {
 	width: { inputType: 'number' },
 	height: { inputType: 'number' },
 	opacity: { defaultValue: 1, inputType: 'number' },
-	runWithMiniPlayer: { defaultValue: false, inputType: 'checkbox' },
 	showDebugMessages: { defaultValue: false, inputType: 'checkbox' },
 	autoFocusPlayer: { defaultValue: true, inputType: 'checkbox' }
 	// autoStart: TODO
@@ -43,47 +41,33 @@ module.exports = class Script {
 		this.destroy();
 	}
 
-	isMiniplayerOpen() {
-		return document.querySelector('ytd-miniplayer').active;
+	isInMiniplayer() {
+		return !!document.querySelector('ytd-miniplayer ytd-player');
 	}
 
 	getVideoId() {
 		return new URLSearchParams(window.location.search).get('v');
 	}
 
+	getVideoPlayer() {
+		const ytdPlayer = document.querySelector('ytd-player');
+		return ytdPlayer && ytdPlayer.player_;
+	}
+
 	async start() {
 		this.debug('starting up.');
 
-		this.videoId = this.getVideoId();
-		let miniPlayerHack = false;
+		this._player = this.getVideoPlayer();
 
-		if (!this.videoId && this.isMiniplayerOpen()) {
-			miniPlayerHack = true;
-			if (!this.settings.get('runWithMiniPlayer')) {
-				miniPlayerHack = confirm(`Looks like you have the miniplayer open. I need to close it and reopen to find the video id. This will happen very fast.\n\nYou can skip this message next time by checking the "runWithMiniPlayer" checkbox under the info panel.\n\nContinue?`);
-			}
-			if (!miniPlayerHack) {
-				return this.destroy();
-			}
-		} else if (!this.videoId) {
-			return this.destroyWithAlert('Could not find video id.');
+		if (!this._player) {
+			return this.destroyWithAlert('Could not find video player.');
 		}
 
-		if (miniPlayerHack) {
-			this.debug('hacking around miniplayer...');
-			await new Promise(async resolve => {
-				document.querySelector('ytd-player .ytp-miniplayer-expand-watch-page-button').click();
-				await new Promise(r => setTimeout(r, 500));
-				this.videoId = this.getVideoId();
-				document.querySelector('ytd-player .ytp-miniplayer-button').click();
-				resolve();
-			});
-		}
+		const videoId = this._player.getVideoData().video_id;
 
-		this.debug(`found video id "${this.videoId}".`);
+		this.debug(`found video id "${videoId}".`);
 
-		this._player = new Player();
-		this._miniPlayer = createMiniPlayer(this.videoId);
+		this._miniPlayer = createMiniPlayer(videoId);
 		if (this.settings.has('opacity')) {
 			this._miniPlayer.style.opacity = this.settings.get('opacity');
 			this._miniPlayer.els('slider').value = this.settings.get('opacity') * 100;
@@ -138,7 +122,9 @@ module.exports = class Script {
 	}
 
 	_onWindowClick() {
-		if (this.getVideoId() !== this.videoId && !this.isMiniplayerOpen()) {
+		const videoId = this._player.getVideoData().video_id;
+
+		if (this.getVideoId() !== videoId && !this.isInMiniplayer()) {
 			this.debug('detecting url change.');
 			this.onURLChange();
 		}
@@ -184,16 +170,15 @@ module.exports = class Script {
 				return setTimeout(poll, 50);
 			}
 
-			const isAd = this._player.isAd();
+			const isAd = this._player.getAdState() > -1;
 			isAd && this.debug('detected original video is an ad.');
 
-			const time = isAd ? 0 : this._player.getVideo().currentTime;
-			miniVideo.currentTime = time;
+			miniVideo.currentTime = this._player.getCurrentTime();
 			if (this.settings.get('autoFocusPlayer')) {
 				this.debug('focusing youtube embed iframe.');
 				miniVideo.focus();
 			}
-			this._player.setMute(true);
+			this._player.mute();
 
 			window.addEventListener('beforeunload', () => {
 				this.destroy();
@@ -223,8 +208,8 @@ module.exports = class Script {
 		this.debug('closing and applying time+mute to original video.')
 		const miniVideo = this._miniPlayer.els('iframe').contentDocument.querySelector('video');
 
-		this._player.getVideo().currentTime = miniVideo.currentTime;
-		this._player.getVideo()[miniVideo.paused ? 'pause' : 'play']();
+		this._player.seekTo(miniVideo.currentTime);
+		this._player[miniVideo.paused ? 'pauseVideo' : 'playVideo']();
 
 		this.destroy();
 	}
@@ -292,12 +277,11 @@ module.exports = class Script {
 			const iframeDoc = this._miniPlayer.els('iframe').contentDocument;
 			const miniVideo = iframeDoc && iframeDoc.querySelector('video');
 			miniVideo && miniVideo.pause();
-			this._player.setMute(miniVideo.muted);
+			this._player[miniVideo.muted ? 'mute' : 'unMute']();
 		}
 
 		this._miniPlayer && this._miniPlayer.remove();
 		this._draggable && this._draggable.destroy();
-		this._player && this._player.destroy();
 
 		this._player = this._miniPlayer = this.settings = null;
 	}
